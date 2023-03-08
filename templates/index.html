@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Push Data</title>
+  </head>
+  <body>
+    <h1>Push Data</h1>
+    <form method="POST" action="/push" enctype="multipart/form-data">
+      <input type="text" name="source_url" placeholder="URL" required>
+      <input type="text" name="source_name" placeholder="Video Name" required>
+      <input type="submit" value="Send Request">
+    </form>
+    <br>
+    <h1>Task Status</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Task ID</th>
+          <th>Status</th>
+          <th>Results</th>
+        </tr>
+      </thead>
+      <tbody id="task-status">
+      </tbody>
+    </table>
+    <script>
+      const form = document.querySelector('form');
+      const taskStatusTable = document.getElementById('task-status');
+      let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+      function populateTable(tasks = []) {
+        const taskStatusTable = document.getElementById('task-status');
+        taskStatusTable.innerHTML = ''; // clear existing rows
+
+        tasks.forEach(task => {
+          const newRow = taskStatusTable.insertRow();
+
+          const sourceNameCell = newRow.insertCell();
+          const taskIdCell = newRow.insertCell();
+          const statusCell = newRow.insertCell();
+          const resultsCell = newRow.insertCell();
+          const taskId = task.id
+          taskIdCell.textContent = task.id;
+          sourceNameCell.textContent = task.source_name;
+
+          fetch(`/status/${taskId}`, { method: 'GET' })
+            .then(response => response.json())
+            .then(data => {
+              const taskStatus = data.status;
+              statusCell.textContent = taskStatus;
+              const taskIndex = tasks.findIndex(t => t.id === taskId);
+              tasks[taskIndex].status = taskStatus;
+              localStorage.setItem('tasks', JSON.stringify(tasks));
+            })
+            .catch(error => {
+              console.log(`Error fetching task status for ${task.id}: ${error}`);
+            });
+              
+          const taskIdLink = document.createElement('a');
+          taskIdLink.href = task.link;
+          taskIdLink.textContent = 'Task Results';
+          resultsCell.appendChild(taskIdLink);
+        });
+      }
+      
+      window.addEventListener('load', populateTable);
+      window.addEventListener('pageshow', () => {
+        tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        populateTable(tasks);
+      });
+
+      form.addEventListener('submit', e => {
+        e.preventDefault(); // prevent the form from submitting and refreshing the page
+        const formData = new FormData(form);
+        fetch('/push', {
+          method: 'POST',
+          body: formData,
+        })
+          .then(response => response.json())
+          .then(data => {
+            const taskId = data.id;
+            const sourceName = data.source_name;
+            const status = data.status;
+            const newRow = taskStatusTable.insertRow();
+
+            const sourceNameCell = newRow.insertCell();
+            const taskIdCell = newRow.insertCell();
+            const statusCell = newRow.insertCell();
+            const resultsCell = newRow.insertCell();
+
+            taskIdCell.textContent = taskId;
+            sourceNameCell.textContent = sourceName;
+            statusCell.textContent = status.toString();
+
+            const taskIdLink = document.createElement('a');
+            taskIdLink.href = '#';
+            taskIdLink.textContent = 'Task Results';
+            resultsCell.appendChild(taskIdLink);
+
+            const task = {
+              id: taskId,
+              source_name: sourceName,
+              status: status.toString(),
+              link: `/results/${taskId}`
+            };
+            tasks.push(task);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+
+            const checkTaskStatus = setInterval(() => {
+              fetch(`/status/${taskId}`, {
+                method: 'GET',
+              })
+                .then(response => response.json())
+                .then(data => {
+                  const taskStatus = data.status;
+                  statusCell.textContent = taskStatus;
+                  const taskIndex = tasks.findIndex(task => task.id === taskId);
+                  tasks[taskIndex].status = taskStatus;
+                  localStorage.setItem('tasks', JSON.stringify(tasks));
+                  
+                  if (taskStatus === 'finished') {
+                    clearInterval(checkTaskStatus);
+                  }
+                  if (taskStatus === 'error') {
+                    clearInterval(checkTaskStatus);
+                  }
+                });
+            }, 5000);
+
+            taskIdLink.addEventListener('click', (event) => {
+              event.preventDefault();
+              fetch(`/results/${taskId}`, {
+                method: 'GET',
+              })
+                .then(response => response.text())
+                .then(html => {
+                  // render the results page with the HTML response
+                  window.location.href = `/results/${taskId}`;
+                });
+            });
+          });
+      });
+    </script>
+  </body>
+</html>
+
+
