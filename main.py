@@ -11,9 +11,12 @@ import numpy as np
 import requests
 import time
 import json
+import redis
 
 app = Flask(__name__)
-jobs = []
+
+redis_client = redis.Redis(host='localhost', port=6379, db=0)
+
 
 app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379'
 app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379'
@@ -91,7 +94,6 @@ def push():
     source_name = request.form['source_name']
     video_url = request.form['source_url']
     task = process.delay(video_url)
-    jobs.append(task.id)
     return {'id': task.id, 'status': 'queued', 'source_name': source_name}, 202
 
 
@@ -124,7 +126,14 @@ def get_video_results(task_id):
 
 @app.route('/list', methods=['GET'])
 def list():
-    return jobs
+    ids = []
+    task_ids = redis_client.keys("celery-task-meta-*")
+    # Print the task IDs
+    for task_id in task_ids:
+        task = str(task_id.decode('utf-8'))
+        task = task.split('celery-task-meta-')[1]
+        ids.append(task)
+    return ids
 
 @app.route('/results/<task_id>', methods=['GET'])
 def get_results(task_id):
