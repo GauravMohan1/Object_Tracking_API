@@ -5,7 +5,6 @@ from celery import app
 
 import cv2
 import torch
-import yolov5
 from sort import Sort
 import numpy as np
 import requests
