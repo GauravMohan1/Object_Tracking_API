@@ -64,6 +64,6 @@ python main.py
 ## Testing
 #### To test the functionality of each endpoint in a separate terminal run:
 ```bash
-python test.py"
+python test.py
 ```
 ##### This will iteratively submit each of the sample video urls to the flask app and test each of the endpoints for each url that is processed and print out the response for each endpoint request.
