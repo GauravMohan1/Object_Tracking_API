@@ -14,7 +14,7 @@ brew install redis
 ```bash
 brew install redis
 ```
-#### 2. Then unzip the files and navigate to the directory in terminal.
+#### 2. You can also download redis directly from the following link: http://download.redis.io/redis-stable.tar.gz
 #### 3. The next step is to create a virtual environment to run the application.
   - Make sure you have a python version >= 3.7. Run the following lines in terminal to create a virtual environment.
 ```bash
