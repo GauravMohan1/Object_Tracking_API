@@ -1,6 +1,6 @@
 ## Documentation
 
-The following sections will explain how to install and interact with the Objectc Tracking Engine
+The following sections will explain how to install and interact with the Object Tracking Engine
 
 ## Installation
 We will be using Redis in this project.
